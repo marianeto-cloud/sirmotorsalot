@@ -1,4 +1,4 @@
-fastapi
+mcp
 uvicorn
 google-cloud-discoveryengine
 google-auth
