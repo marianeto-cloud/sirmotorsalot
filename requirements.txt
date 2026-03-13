@@ -1,5 +1,4 @@
-mcp[cli]
+fastapi
 uvicorn
 google-cloud-discoveryengine
 google-auth
-fastapi
