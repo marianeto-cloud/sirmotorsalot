@@ -3,16 +3,16 @@ import json
 from mcp.server.fastmcp import FastMCP
 from google.cloud import discoveryengine_v1 as discoveryengine
 from google.oauth2 import service_account
+from fastapi.middleware.cors import CORSMiddleware
 
 # Cria o servidor usando o Protocolo Oficial MCP
 mcp = FastMCP("Standvirtual MCP")
 
-# --- CONFIGURAÇÕES DO GOOGLE CLOUD ---
+# Configurações da sua base de dados
 PROJECT_ID = "toqan-standvirtual-agent" 
 LOCATION = "global"
 DATA_STORE_ID = "standvirtual-support-search_1773401932233" 
 
-# O decorador @mcp.tool() avisa logo o TOQAN que isto é uma ferramenta
 @mcp.tool()
 def search_knowledge(query: str) -> str:
     """Procura regras, templates e procedimentos na base de dados do Standvirtual."""
@@ -54,8 +54,16 @@ def search_knowledge(query: str) -> str:
     except Exception as e:
         return f"Erro ao consultar o Google Cloud: {str(e)}"
 
-# Cria automaticamente as rotas MCP oficiais e a ligação contínua (SSE)
+# Cria a App e adiciona o Passe Livre (CORS) para o TOQAN não ser bloqueado
 app = mcp.streamable_http_app()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == "__main__":
     import uvicorn
