@@ -2,13 +2,24 @@ import os
 import json
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import discoveryengine_v1 as discoveryengine
 from google.oauth2 import service_account
 
 app = FastAPI()
 
-# --- HEALTH CHECK PARA O TOQAN ---
-@app.get("/")
+# --- CONFIGURAÇÃO DE SEGURANÇA (CORS) ---
+# Isto resolve o erro "Method Not Allowed" do TOQAN
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permite que qualquer plataforma comunique (incluindo o TOQAN)
+    allow_credentials=True,
+    allow_methods=["*"], # Permite todos os métodos (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],
+)
+
+# --- HEALTH CHECK PARA O TOQAN (Agora aceita GET e POST) ---
+@app.api_route("/", methods=["GET", "POST", "OPTIONS"])
 def root():
     return {"status": "Servidor MCP do Standvirtual Online!"}
 
