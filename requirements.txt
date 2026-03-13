@@ -1,4 +1,4 @@
-mcp
+mcp[cli]
 uvicorn
 google-cloud-discoveryengine
 google-auth
