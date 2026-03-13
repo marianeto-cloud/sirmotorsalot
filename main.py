@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # Cria o servidor usando o Protocolo Oficial MCP
 mcp = FastMCP("Standvirtual MCP")
 
-# Configurações da sua base de dados
 PROJECT_ID = "toqan-standvirtual-agent" 
 LOCATION = "global"
 DATA_STORE_ID = "standvirtual-support-search_1773401932233" 
@@ -54,7 +53,7 @@ def search_knowledge(query: str) -> str:
     except Exception as e:
         return f"Erro ao consultar o Google Cloud: {str(e)}"
 
-# Cria a App e adiciona o Passe Livre (CORS) para o TOQAN não ser bloqueado
+# Cria a App e adiciona o Passe Livre (CORS)
 app = mcp.streamable_http_app()
 
 app.add_middleware(
