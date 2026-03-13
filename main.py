@@ -7,15 +7,18 @@ from google.oauth2 import service_account
 
 app = FastAPI()
 
+# --- HEALTH CHECK PARA O TOQAN ---
+@app.get("/")
+def root():
+    return {"status": "Servidor MCP do Standvirtual Online!"}
+
 # --- CONFIGURAÇÕES DO GOOGLE CLOUD ---
 PROJECT_ID = "toqan-standvirtual-agent" 
 LOCATION = "global"
-# O ID exato que retirei da sua imagem:
 DATA_STORE_ID = "standvirtual-support-search_1773401932233" 
 
 def search_knowledge(query: str):
     try:
-        # 1. Carregar a chave JSON em segurança a partir do Render
         creds_json_str = os.environ.get("GOOGLE_CREDENTIALS_JSON")
         if not creds_json_str:
             return "Erro no Servidor: A chave JSON não foi encontrada nas variáveis de ambiente."
@@ -23,10 +26,8 @@ def search_knowledge(query: str):
         creds_info = json.loads(creds_json_str)
         credentials = service_account.Credentials.from_service_account_info(creds_info)
 
-        # 2. Ligar ao Google Cloud com essa chave
         client = discoveryengine.SearchServiceClient(credentials=credentials)
         
-        # 3. Preparar a pesquisa
         serving_config = client.serving_config_path(
             project=PROJECT_ID,
             location=LOCATION,
@@ -37,12 +38,11 @@ def search_knowledge(query: str):
         request = discoveryengine.SearchRequest(
             serving_config=serving_config,
             query=query,
-            page_size=3, # Traz os 3 melhores excertos do seu manual
+            page_size=3,
         )
 
         response = client.search(request)
         
-        # 4. Juntar as respostas
         context_chunks = []
         for result in response.results:
             for snippet in result.document.derived_struct_data.get("snippets", []):
@@ -89,7 +89,3 @@ def call_tool(data: dict):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-   
-    @app.get("/")
-def root():
-    return {"status": "Servidor MCP do Standvirtual Online!"}
