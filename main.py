@@ -4,7 +4,7 @@ from mcp.server.fastmcp import FastMCP
 from google.cloud import discoveryengine_v1 as discoveryengine
 from google.oauth2 import service_account
 
-# 1. Cria o servidor usando o Protocolo Oficial MCP!
+# Cria o servidor usando o Protocolo Oficial MCP
 mcp = FastMCP("Standvirtual MCP")
 
 # --- CONFIGURAÇÕES DO GOOGLE CLOUD ---
@@ -12,7 +12,7 @@ PROJECT_ID = "toqan-standvirtual-agent"
 LOCATION = "global"
 DATA_STORE_ID = "standvirtual-support-search_1773401932233" 
 
-# 2. O decorador @mcp.tool() avisa logo o TOQAN que isto é uma ferramenta
+# O decorador @mcp.tool() avisa logo o TOQAN que isto é uma ferramenta
 @mcp.tool()
 def search_knowledge(query: str) -> str:
     """Procura regras, templates e procedimentos na base de dados do Standvirtual."""
@@ -54,10 +54,9 @@ def search_knowledge(query: str) -> str:
     except Exception as e:
         return f"Erro ao consultar o Google Cloud: {str(e)}"
 
-# 3. Isto cria automaticamente as rotas MCP oficiais e a ligação contínua (SSE)
+# Cria automaticamente as rotas MCP oficiais e a ligação contínua (SSE)
 app = mcp.streamable_http_app()
 
-# O código final para o Render arrancar
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
