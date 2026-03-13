@@ -1,38 +1,25 @@
 import os
 import json
-import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from mcp.server.fastmcp import FastMCP
 from google.cloud import discoveryengine_v1 as discoveryengine
 from google.oauth2 import service_account
 
-app = FastAPI()
-
-# --- CONFIGURAÇÃO DE SEGURANÇA (CORS) ---
-# Isto resolve o erro "Method Not Allowed" do TOQAN
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Permite que qualquer plataforma comunique (incluindo o TOQAN)
-    allow_credentials=True,
-    allow_methods=["*"], # Permite todos os métodos (GET, POST, OPTIONS, etc.)
-    allow_headers=["*"],
-)
-
-# --- HEALTH CHECK PARA O TOQAN (Agora aceita GET e POST) ---
-@app.api_route("/", methods=["GET", "POST", "OPTIONS"])
-def root():
-    return {"status": "Servidor MCP do Standvirtual Online!"}
+# 1. Cria o servidor usando o Protocolo Oficial MCP!
+mcp = FastMCP("Standvirtual MCP")
 
 # --- CONFIGURAÇÕES DO GOOGLE CLOUD ---
 PROJECT_ID = "toqan-standvirtual-agent" 
 LOCATION = "global"
 DATA_STORE_ID = "standvirtual-support-search_1773401932233" 
 
-def search_knowledge(query: str):
+# 2. O decorador @mcp.tool() avisa logo o TOQAN que isto é uma ferramenta
+@mcp.tool()
+def search_knowledge(query: str) -> str:
+    """Procura regras, templates e procedimentos na base de dados do Standvirtual."""
     try:
         creds_json_str = os.environ.get("GOOGLE_CREDENTIALS_JSON")
         if not creds_json_str:
-            return "Erro no Servidor: A chave JSON não foi encontrada nas variáveis de ambiente."
+            return "Erro: A chave JSON não foi encontrada nas variáveis de ambiente."
         
         creds_info = json.loads(creds_json_str)
         credentials = service_account.Credentials.from_service_account_info(creds_info)
@@ -67,36 +54,11 @@ def search_knowledge(query: str):
     except Exception as e:
         return f"Erro ao consultar o Google Cloud: {str(e)}"
 
-# --- ENDPOINTS PARA O TOQAN ---
-@app.get("/tools/list")
-def list_tools():
-    return {
-        "tools": [
-            {
-                "name": "search_knowledge",
-                "description": "Procura regras, templates e procedimentos na base de dados do Standvirtual.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string"}
-                    },
-                    "required": ["query"]
-                }
-            }
-        ]
-    }
+# 3. Isto cria automaticamente as rotas MCP oficiais e a ligação contínua (SSE)
+app = mcp.streamable_http_app()
 
-@app.post("/tools/call")
-def call_tool(data: dict):
-    tool_name = data.get("tool")
-
-    if tool_name == "search_knowledge":
-        query = data["arguments"]["query"]
-        result = search_knowledge(query)
-        return {"result": result}
-    else:
-        return {"error": "Tool not found"}
-
+# O código final para o Render arrancar
 if __name__ == "__main__":
+    import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
