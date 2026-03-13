@@ -1,11 +1,12 @@
 import os
 import json
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from mcp.server.fastmcp import FastMCP
 from google.cloud import discoveryengine_v1 as discoveryengine
 from google.oauth2 import service_account
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 # 1. Configurar o MCP
 mcp = FastMCP("Standvirtual")
@@ -39,10 +40,9 @@ def search_knowledge(query: str) -> str:
     except Exception as e:
         return f"Erro: {str(e)}"
 
-# 2. Criar a App FastAPI e ligar ao MCP
+# 2. Criar a App FastAPI
 app = FastAPI()
 
-# Permitir que o Toqan entre sem bloqueios
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -50,12 +50,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rota de teste para o Toqan saber que o servidor está vivo
-@app.get("/")
-def home():
-    return {"status": "MCP Server is Running"}
+# RESOLVE O ERRO DO /SSE (Maiúsculas)
+@app.get("/SSE")
+async def redirect_sse_upper():
+    return RedirectResponse(url="/sse")
 
-# Montar as rotas do MCP (isso cria o /sse e o /messages automaticamente)
+# RESOLVE O ERRO DO POST / (404)
+@app.api_route("/", methods=["GET", "POST", "OPTIONS"])
+async def home_permissive(request: Request):
+    return {"status": "MCP Server is Running", "info": "Use /sse for connection"}
+
+# Montar o MCP
 mcp_app = mcp.streamable_http_app()
 app.mount("/", mcp_app)
 
